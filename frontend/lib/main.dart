@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -29,7 +30,9 @@ class _SafeScanAppState extends State<SafeScanApp> {
   @override
   void initState() {
     super.initState();
-    _autoSmsChannel.setMethodCallHandler(_onNativeMethodCall);
+    if (!kIsWeb) {
+      _autoSmsChannel.setMethodCallHandler(_onNativeMethodCall);
+    }
     _initializeAutoSmsMonitoring();
   }
 
@@ -51,6 +54,7 @@ class _SafeScanAppState extends State<SafeScanApp> {
   }
 
   Future<void> _initializeAutoSmsMonitoring() async {
+    if (kIsWeb) return;
     await _syncNativeBackendCandidates();
     await _requestAutoSmsPermissions();
     await _loadNotificationTapResult();

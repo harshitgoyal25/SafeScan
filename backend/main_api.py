@@ -1,4 +1,7 @@
-from fastapi import FastAPI
+import os
+import shutil
+import tempfile
+from fastapi import FastAPI, UploadFile, File
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 import joblib
@@ -8,6 +11,7 @@ from urllib.parse import urlparse
 import re
 from feature_engineering import extract_features
 from sms_model import predict_sms
+from apk_scanner import extract_apk_features
 
 app = FastAPI(title="SafeScan AI Backend")
 
@@ -26,6 +30,11 @@ try:
     tfidf = joblib.load("models/tfidf_vectorizer.pkl")
     threshold = joblib.load("models/threshold.pkl")
     numeric_columns = joblib.load("models/numeric_columns.pkl")
+    
+    # APK Models
+    apk_chi2 = joblib.load("models/chi2_selector.pkl")
+    apk_feature_indices = joblib.load("models/feature_indices.pkl")
+    apk_lgbm = joblib.load("models/lgbm_model.pkl")
 except Exception as e:
     print(f"Error loading models: {e}")
 
@@ -149,3 +158,42 @@ async def scan_sms(request: SMSRequest):
         return {"status": "suspicious", "message": "Spam SMS"}
     else:
         return {"status": "safe", "message": "Legitimate SMS"}
+
+@app.post("/scan/apk")
+async def scan_apk(file: UploadFile = File(...)):
+    if not file.filename.endswith(".apk"):
+        return {"status": "error", "message": "File must be an Android APK"}
+
+    # Save to temporary file safely
+    try:
+        fd, temp_path = tempfile.mkstemp(suffix=".apk")
+        os.close(fd)
+        with open(temp_path, "wb") as buffer:
+            shutil.copyfileobj(file.file, buffer)
+            
+        features = extract_apk_features(temp_path)
+    finally:
+        if 'temp_path' in locals() and os.path.exists(temp_path):
+            os.remove(temp_path)
+
+    if features is None:
+        return {"status": "error", "message": "Invalid APK structure or failed to parse."}
+        
+    # 1. Chi2 Feature Selection
+    reduced_features = apk_chi2.transform(features)
+    
+    # 2. Select top 2000 indices
+    final_features = reduced_features[:, apk_feature_indices]
+    
+    # 3. Predict ML Probabilities (LightGBM)
+    prob_malicious = float(apk_lgbm.predict_proba(final_features)[:, 1][0])
+    
+    if prob_malicious > 0.5:
+        label = "danger" if prob_malicious > 0.75 else "suspicious"
+        msg = "Malware detected in APK"
+    else:
+        label = "safe"
+        msg = "Legitimate APK"
+        
+    return {"status": label, "confidence": round(prob_malicious, 4), "message": msg}
+

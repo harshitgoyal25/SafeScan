@@ -12,6 +12,7 @@ class MainActivity : FlutterActivity() {
 	override fun onCreate(savedInstanceState: android.os.Bundle?) {
 		super.onCreate(savedInstanceState)
 		consumeSmsResultIntent(intent)
+		startService(Intent(this, ApkObserverService::class.java))
 	}
 
 	override fun onNewIntent(intent: Intent) {

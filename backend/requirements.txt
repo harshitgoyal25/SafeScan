@@ -10,3 +10,5 @@ beautifulsoup4
 requests
 tldextract
 joblib
+lightgbm
+python-multipart

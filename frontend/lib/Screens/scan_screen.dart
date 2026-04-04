@@ -1,7 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:permission_handler/permission_handler.dart';
 
@@ -19,7 +19,7 @@ class _ScanScreenState extends State<ScanScreen>
   late String scanType;
   final TextEditingController _textController = TextEditingController();
   final ScanApiService _scanApiService = ScanApiService();
-  File? selectedApk;
+  PlatformFile? selectedApk;
 
   bool isScanning = false;
   double progress = 0.0;
@@ -68,6 +68,7 @@ class _ScanScreenState extends State<ScanScreen>
   /* ---------------- PERMISSION ---------------- */
 
   Future<bool> _requestStoragePermission() async {
+    if (kIsWeb) return true;
     final status = await Permission.storage.request();
     return status.isGranted;
   }
@@ -81,11 +82,12 @@ class _ScanScreenState extends State<ScanScreen>
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
       allowedExtensions: ['apk'],
+      withData: kIsWeb,
     );
 
-    if (result != null && result.files.single.path != null) {
+    if (result != null && result.files.single.name.isNotEmpty) {
       setState(() {
-        selectedApk = File(result.files.single.path!);
+        selectedApk = result.files.single;
       });
     }
   }
@@ -139,8 +141,7 @@ class _ScanScreenState extends State<ScanScreen>
     } else if (scanType == "sms") {
       return _scanApiService.scanSms(_textController.text);
     } else if (scanType == "apk") {
-      await Future.delayed(const Duration(seconds: 2));
-      return "suspicious";
+      return _scanApiService.scanApk(selectedApk!);
     }
     return "safe";
   }
@@ -349,7 +350,7 @@ class _ScanScreenState extends State<ScanScreen>
                       const SizedBox(width: 8),
                       Flexible(
                         child: Text(
-                          selectedApk!.path.split('/').last,
+                          selectedApk!.name,
                           style: TextStyle(
                             color: _accentColor(),
                             fontWeight: FontWeight.w500,
