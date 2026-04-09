@@ -1,9 +1,7 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
-import 'package:permission_handler/permission_handler.dart';
 
 import '../services/scan_api_service.dart';
 
@@ -16,14 +14,15 @@ class ScanScreen extends StatefulWidget {
 
 class _ScanScreenState extends State<ScanScreen>
     with SingleTickerProviderStateMixin {
-  late String scanType;
+  String scanType = 'url';
   final TextEditingController _textController = TextEditingController();
   final ScanApiService _scanApiService = ScanApiService();
-  File? selectedApk;
 
   bool isScanning = false;
   double progress = 0.0;
   String? resultStatus;
+  String? _selectedApkPath;
+  String? _selectedApkName;
 
   AnimationController? _pulseController;
   Animation<double>? _pulseAnimation;
@@ -62,44 +61,67 @@ class _ScanScreenState extends State<ScanScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    scanType = ModalRoute.of(context)!.settings.arguments as String;
+    final String? routeType =
+        ModalRoute.of(context)?.settings.arguments as String?;
+    if (routeType == 'url' || routeType == 'sms' || routeType == 'apk') {
+      scanType = routeType!;
+    } else {
+      scanType = 'url';
+    }
   }
 
-  /* ---------------- PERMISSION ---------------- */
-
-  Future<bool> _requestStoragePermission() async {
-    final status = await Permission.storage.request();
-    return status.isGranted;
-  }
-
-  /* ---------------- APK PICKER ---------------- */
-
-  Future<void> _pickApk() async {
-    final granted = await _requestStoragePermission();
-    if (!granted) return;
-
+  Future<void> _pickApkFile() async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['apk'],
+      allowedExtensions: const ['apk'],
+      allowMultiple: false,
+      withData: false,
     );
 
-    if (result != null && result.files.single.path != null) {
-      setState(() {
-        selectedApk = File(result.files.single.path!);
-      });
+    if (!mounted || result == null || result.files.isEmpty) {
+      return;
     }
+
+    final file = result.files.first;
+    if (file.path == null || file.path!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Could not access the selected APK file.'),
+          backgroundColor: Colors.redAccent,
+        ),
+      );
+      return;
+    }
+
+    setState(() {
+      _selectedApkPath = file.path;
+      _selectedApkName = file.name;
+      resultStatus = null;
+      progress = 0;
+    });
   }
 
   /* ---------------- SCAN LOGIC ---------------- */
 
   Future<void> startScan() async {
+    if (scanType == 'apk' &&
+        (_selectedApkPath == null || _selectedApkPath!.isEmpty)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Pick an APK file first.'),
+          backgroundColor: Colors.orangeAccent,
+        ),
+      );
+      return;
+    }
+
     setState(() {
       isScanning = true;
       progress = 0;
       resultStatus = null;
     });
 
-    Timer? progressTimer = Timer.periodic(const Duration(milliseconds: 100), (
+    final progressTimer = Timer.periodic(const Duration(milliseconds: 100), (
       timer,
     ) {
       if (progress < 0.9) {
@@ -108,7 +130,7 @@ class _ScanScreenState extends State<ScanScreen>
     });
 
     try {
-      String finalResult = await _performRealScan();
+      final finalResult = await _performRealScan();
       progressTimer.cancel();
       setState(() {
         progress = 1.0;
@@ -122,27 +144,21 @@ class _ScanScreenState extends State<ScanScreen>
         isScanning = false;
         resultStatus = 'safe';
       });
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('Error: $e'),
-            backgroundColor: Colors.redAccent,
-          ),
-        );
-      }
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('Error: $e'), backgroundColor: Colors.redAccent),
+      );
     }
   }
 
   Future<String> _performRealScan() async {
-    if (scanType == "url") {
-      return _scanApiService.scanUrl(_textController.text);
-    } else if (scanType == "sms") {
-      return _scanApiService.scanSms(_textController.text);
-    } else if (scanType == "apk") {
-      await Future.delayed(const Duration(seconds: 2));
-      return "suspicious";
+    if (scanType == 'apk') {
+      return _scanApiService.scanApk(_selectedApkPath!);
     }
-    return "safe";
+    if (scanType == 'sms') {
+      return _scanApiService.scanSms(_textController.text);
+    }
+    return _scanApiService.scanUrl(_textController.text);
   }
 
   /* ---------------- UI ---------------- */
@@ -203,25 +219,25 @@ class _ScanScreenState extends State<ScanScreen>
 
   String _title() {
     switch (scanType) {
-      case "url":
-        return "URL Scanner";
-      case "sms":
-        return "SMS Scanner";
-      case "apk":
-        return "APK Scanner";
+      case 'url':
+        return 'URL Scanner';
+      case 'sms':
+        return 'SMS Scanner';
+      case 'apk':
+        return 'APK Scanner';
       default:
-        return "Smart Scan";
+        return 'URL Scanner';
     }
   }
 
   Color _accentColor() {
     switch (scanType) {
-      case "url":
+      case 'url':
         return const Color(0xFF26C6DA);
-      case "sms":
+      case 'sms':
         return const Color(0xFFAB47BC);
-      case "apk":
-        return const Color(0xFF66BB6A);
+      case 'apk':
+        return const Color(0xFFFFB74D);
       default:
         return const Color(0xFF26C6DA);
     }
@@ -229,23 +245,23 @@ class _ScanScreenState extends State<ScanScreen>
 
   IconData _scanIcon() {
     switch (scanType) {
-      case "url":
+      case 'url':
         return Icons.link_rounded;
-      case "sms":
+      case 'sms':
         return Icons.sms_rounded;
-      case "apk":
+      case 'apk':
         return Icons.android_rounded;
       default:
-        return Icons.radar_rounded;
+        return Icons.link_rounded;
     }
   }
 
   Widget _instructionText() {
-    final String hint = scanType == "apk"
-        ? "Select an APK file from your device"
-        : scanType == "sms"
-        ? "Paste the suspicious SMS message below"
-        : "Enter the URL you want to analyze";
+    final String hint = switch (scanType) {
+      'sms' => 'Paste the suspicious SMS message below',
+      'apk' => 'Choose an APK file and scan it for malware indicators',
+      _ => 'Enter the URL you want to analyze',
+    };
 
     return Text(
       hint,
@@ -255,7 +271,76 @@ class _ScanScreenState extends State<ScanScreen>
   }
 
   Widget _inputSection() {
-    if (scanType == "apk") return _apkPickerUI();
+    if (scanType == 'apk') {
+      return Container(
+        width: double.infinity,
+        padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: const Color(0xFF0D1F2D),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: _accentColor().withOpacity(0.3),
+            width: 1.2,
+          ),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(
+              'APK file',
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.65),
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.4,
+              ),
+            ),
+            const SizedBox(height: 10),
+            Text(
+              _selectedApkName ?? 'No APK selected yet',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: Colors.white,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            const SizedBox(height: 6),
+            Text(
+              _selectedApkPath ??
+                  'Tap below to choose a file from device storage',
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: Colors.white.withOpacity(0.35),
+                fontSize: 12,
+              ),
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              child: OutlinedButton.icon(
+                onPressed: isScanning ? null : _pickApkFile,
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: _accentColor(),
+                  side: BorderSide(color: _accentColor().withOpacity(0.5)),
+                  padding: const EdgeInsets.symmetric(vertical: 14),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(14),
+                  ),
+                ),
+                icon: const Icon(Icons.upload_file_rounded, size: 18),
+                label: Text(
+                  _selectedApkPath == null ? 'Choose APK' : 'Change APK',
+                  style: const TextStyle(fontWeight: FontWeight.w700),
+                ),
+              ),
+            ),
+          ],
+        ),
+      );
+    }
 
     return Container(
       decoration: BoxDecoration(
@@ -265,12 +350,12 @@ class _ScanScreenState extends State<ScanScreen>
       ),
       child: TextField(
         controller: _textController,
-        maxLines: scanType == "sms" ? 5 : 1,
+        maxLines: scanType == 'sms' ? 5 : 1,
         style: const TextStyle(color: Colors.white, fontSize: 14),
         decoration: InputDecoration(
-          hintText: scanType == "sms"
-              ? "Paste SMS content here..."
-              : "https://example.com",
+          hintText: scanType == 'sms'
+              ? 'Paste SMS content here...'
+              : 'https://example.com',
           hintStyle: TextStyle(color: Colors.white.withOpacity(0.25)),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.all(16),
@@ -288,87 +373,9 @@ class _ScanScreenState extends State<ScanScreen>
     );
   }
 
-  Widget _apkPickerUI() {
-    return GestureDetector(
-      onTap: _pickApk,
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.symmetric(vertical: 28, horizontal: 20),
-        decoration: BoxDecoration(
-          color: const Color(0xFF0D1F2D),
-          borderRadius: BorderRadius.circular(18),
-          border: Border.all(
-            color: _accentColor().withOpacity(0.3),
-            width: 1.5,
-          ),
-        ),
-        child: Column(
-          children: [
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: _accentColor().withOpacity(0.12),
-                shape: BoxShape.circle,
-              ),
-              child: Icon(
-                Icons.upload_file_rounded,
-                color: _accentColor(),
-                size: 30,
-              ),
-            ),
-            const SizedBox(height: 14),
-            selectedApk == null
-                ? Column(
-                    children: [
-                      const Text(
-                        "Tap to select APK",
-                        style: TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w600,
-                          fontSize: 15,
-                        ),
-                      ),
-                      const SizedBox(height: 4),
-                      Text(
-                        ".apk files only",
-                        style: TextStyle(
-                          color: Colors.white.withOpacity(0.4),
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  )
-                : Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.check_circle_rounded,
-                        color: _accentColor(),
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Flexible(
-                        child: Text(
-                          selectedApk!.path.split('/').last,
-                          style: TextStyle(
-                            color: _accentColor(),
-                            fontWeight: FontWeight.w500,
-                            fontSize: 13,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-          ],
-        ),
-      ),
-    );
-  }
-
   Widget _scanButton() {
-    final enabled = scanType == "apk"
-        ? selectedApk != null
+    final enabled = scanType == 'apk'
+        ? _selectedApkPath != null && _selectedApkPath!.isNotEmpty
         : _textController.text.isNotEmpty;
 
     final accent = _accentColor();
@@ -418,7 +425,9 @@ class _ScanScreenState extends State<ScanScreen>
                   ),
                 )
               : Text(
-                  enabled ? "Start Scan" : "Enter input to scan",
+                  scanType == 'apk'
+                      ? (enabled ? 'Scan APK' : 'Choose an APK to scan')
+                      : (enabled ? 'Start Scan' : 'Enter input to scan'),
                   style: TextStyle(
                     fontSize: 15,
                     fontWeight: FontWeight.w700,
@@ -431,23 +440,23 @@ class _ScanScreenState extends State<ScanScreen>
   }
 
   Widget _scanCircle() {
-    final Color accent = resultStatus == "danger"
+    final Color accent = resultStatus == 'danger'
         ? Colors.redAccent
-        : resultStatus == "suspicious"
+        : resultStatus == 'suspicious'
         ? Colors.orangeAccent
-        : resultStatus == "safe"
+        : resultStatus == 'safe'
         ? Colors.greenAccent
         : _accentColor();
 
     final String label = isScanning
-        ? "${(progress * 100).toInt()}%"
-        : resultStatus == "danger"
-        ? "THREAT"
-        : resultStatus == "suspicious"
-        ? "WARN"
-        : resultStatus == "safe"
-        ? "SAFE"
-        : "READY";
+        ? '${(progress * 100).toInt()}%'
+        : resultStatus == 'danger'
+        ? 'THREAT'
+        : resultStatus == 'suspicious'
+        ? 'WARN'
+        : resultStatus == 'safe'
+        ? 'SAFE'
+        : 'READY';
 
     return ScaleTransition(
       scale: (isScanning || resultStatus == null)
@@ -459,7 +468,6 @@ class _ScanScreenState extends State<ScanScreen>
         child: Stack(
           alignment: Alignment.center,
           children: [
-            // Glow behind ring
             Container(
               height: 160,
               width: 160,
@@ -474,7 +482,6 @@ class _ScanScreenState extends State<ScanScreen>
                 ],
               ),
             ),
-            // Background ring
             SizedBox(
               height: 170,
               width: 170,
@@ -484,7 +491,6 @@ class _ScanScreenState extends State<ScanScreen>
                 color: accent.withOpacity(0.1),
               ),
             ),
-            // Progress ring
             SizedBox(
               height: 170,
               width: 170,
@@ -498,7 +504,6 @@ class _ScanScreenState extends State<ScanScreen>
                 strokeCap: StrokeCap.round,
               ),
             ),
-            // Center icon + label
             Column(
               mainAxisSize: MainAxisSize.min,
               children: [
@@ -529,24 +534,24 @@ class _ScanScreenState extends State<ScanScreen>
     List<Color> gradColors;
 
     switch (resultStatus) {
-      case "danger":
+      case 'danger':
         color = Colors.redAccent;
-        title = "Threat Detected";
-        subtitle = "This content appears to be malicious. Do not proceed.";
+        title = 'Threat Detected';
+        subtitle = 'This content appears to be malicious. Do not proceed.';
         icon = Icons.gpp_bad_rounded;
         gradColors = [const Color(0xFF3D0000), const Color(0xFF1A0000)];
         break;
-      case "suspicious":
+      case 'suspicious':
         color = Colors.orangeAccent;
-        title = "Suspicious";
-        subtitle = "Potentially harmful. Proceed with caution.";
+        title = 'Suspicious';
+        subtitle = 'Potentially harmful. Proceed with caution.';
         icon = Icons.warning_amber_rounded;
         gradColors = [const Color(0xFF332200), const Color(0xFF1A1200)];
         break;
       default:
         color = Colors.greenAccent;
-        title = "All Clear";
-        subtitle = "No threats detected. This looks safe.";
+        title = 'All Clear';
+        subtitle = 'No threats detected. This looks safe.';
         icon = Icons.verified_rounded;
         gradColors = [const Color(0xFF00331A), const Color(0xFF001A0D)];
     }

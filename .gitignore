@@ -5,3 +5,8 @@ env/
 
 # Mac files
 .DS_Store
+
+# Large local artifacts not needed for deployment
+A4star/.venv/
+A4star/.venv-sqlite/
+A4star/MH-100K-dataset/

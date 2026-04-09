@@ -13,25 +13,40 @@ class ScanApiService {
       return [configuredUrl];
     }
 
-    // 10.0.2.2 works on emulator; 127.0.0.1 works on physical devices with adb reverse.
-    return const ['http://10.0.2.2:8000', 'http://127.0.0.1:8000'];
+    return const [
+      'http://10.0.2.2:8000',
+      'http://127.0.0.1:8000',
+      'http://10.0.2.2:8001',
+      'http://127.0.0.1:8001',
+    ];
   }
 
   Future<String> scanUrl(String input) async {
     final trimmed = input.trim();
     if (trimmed.isEmpty) return 'safe';
 
-    return _scanWithFallback(path: '/scan/url', payload: {'url': trimmed});
+    return _scanJsonWithFallback(path: '/scan/url', payload: {'url': trimmed});
   }
 
   Future<String> scanSms(String input) async {
     final trimmed = input.trim();
     if (trimmed.isEmpty) return 'safe';
 
-    return _scanWithFallback(path: '/scan/sms', payload: {'sms': trimmed});
+    return _scanJsonWithFallback(path: '/scan/sms', payload: {'sms': trimmed});
   }
 
-  Future<String> _scanWithFallback({
+  Future<String> scanApk(String apkPath) async {
+    final trimmed = apkPath.trim();
+    if (trimmed.isEmpty) return 'safe';
+
+    return _scanMultipartWithFallback(
+      path: '/scan/apk',
+      fileFieldName: 'file',
+      filePath: trimmed,
+    );
+  }
+
+  Future<String> _scanJsonWithFallback({
     required String path,
     required Map<String, String> payload,
   }) async {
@@ -45,7 +60,7 @@ class ScanApiService {
         );
 
         if (response.statusCode == 200) {
-          return jsonDecode(response.body)['status'] as String;
+          return _extractStatus(response.body);
         }
         lastError = Exception('Status ${response.statusCode} from $baseUrl');
       } catch (e) {
@@ -54,5 +69,43 @@ class ScanApiService {
     }
 
     throw Exception('Failed to reach backend on any candidate URL: $lastError');
+  }
+
+  Future<String> _scanMultipartWithFallback({
+    required String path,
+    required String fileFieldName,
+    required String filePath,
+  }) async {
+    Object? lastError;
+    for (final baseUrl in backendCandidates) {
+      try {
+        final request = http.MultipartRequest(
+          'POST',
+          Uri.parse('$baseUrl$path'),
+        );
+        request.files.add(
+          await http.MultipartFile.fromPath(fileFieldName, filePath),
+        );
+
+        final streamedResponse = await _client.send(request);
+        final response = await http.Response.fromStream(streamedResponse);
+        if (response.statusCode == 200) {
+          return _extractStatus(response.body);
+        }
+        lastError = Exception('Status ${response.statusCode} from $baseUrl');
+      } catch (e) {
+        lastError = e;
+      }
+    }
+
+    throw Exception('Failed to reach backend on any candidate URL: $lastError');
+  }
+
+  String _extractStatus(String responseBody) {
+    final decoded = jsonDecode(responseBody);
+    if (decoded is Map<String, dynamic> && decoded['status'] is String) {
+      return decoded['status'] as String;
+    }
+    throw Exception('Backend response did not include a status field');
   }
 }

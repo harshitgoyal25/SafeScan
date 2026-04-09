@@ -6,7 +6,10 @@ pandas
 numpy
 scipy
 xgboost
+lightgbm
 beautifulsoup4
 requests
 tldextract
 joblib
+androguard
+python-multipart

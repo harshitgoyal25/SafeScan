@@ -35,8 +35,11 @@ class ProtectionStatusCard extends StatelessWidget {
                   color: Colors.white.withOpacity(0.15),
                   shape: BoxShape.circle,
                 ),
-                child: const Icon(Icons.verified_user_rounded,
-                    color: Colors.white, size: 22),
+                child: const Icon(
+                  Icons.verified_user_rounded,
+                  color: Colors.white,
+                  size: 22,
+                ),
               ),
               const SizedBox(width: 12),
               Column(
@@ -62,8 +65,10 @@ class ProtectionStatusCard extends StatelessWidget {
               ),
               const Spacer(),
               Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 12,
+                  vertical: 6,
+                ),
                 decoration: BoxDecoration(
                   color: Colors.greenAccent.withOpacity(0.2),
                   borderRadius: BorderRadius.circular(20),
@@ -98,7 +103,7 @@ class ProtectionStatusCard extends StatelessWidget {
             height: 50,
             child: ElevatedButton.icon(
               onPressed: () {
-                Navigator.pushNamed(context, '/scan', arguments: 'smart');
+                Navigator.pushNamed(context, '/scan', arguments: 'url');
               },
               style: ElevatedButton.styleFrom(
                 backgroundColor: Colors.white,

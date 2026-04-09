@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../widgets/protection_status_card.dart';
 import '../widgets/security_tool_card.dart';
 
 class HomeScreen extends StatelessWidget {
@@ -19,10 +18,12 @@ class HomeScreen extends StatelessWidget {
             surfaceTintColor: Colors.transparent,
             elevation: 0,
             flexibleSpace: FlexibleSpaceBar(
-              titlePadding:
-                  const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
+              titlePadding: const EdgeInsets.symmetric(
+                horizontal: 20,
+                vertical: 14,
+              ),
               title: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                mainAxisAlignment: MainAxisAlignment.start,
                 children: [
                   Column(
                     mainAxisSize: MainAxisSize.min,
@@ -39,18 +40,6 @@ class HomeScreen extends StatelessWidget {
                       ),
                     ],
                   ),
-                  Container(
-                    decoration: BoxDecoration(
-                      color: const Color(0xFF102A3B),
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                    child: IconButton(
-                      iconSize: 20,
-                      icon: const Icon(Icons.notifications_none_rounded,
-                          color: Colors.white70),
-                      onPressed: () {},
-                    ),
-                  ),
                 ],
               ),
             ),
@@ -60,11 +49,6 @@ class HomeScreen extends StatelessWidget {
             padding: const EdgeInsets.fromLTRB(16, 8, 16, 24),
             sliver: SliverList(
               delegate: SliverChildListDelegate([
-                // ---- STATUS CARD ----
-                const ProtectionStatusCard(),
-
-                const SizedBox(height: 28),
-
                 // ---- SECTION TITLE ----
                 const Text(
                   "Security Tools",
@@ -101,22 +85,16 @@ class HomeScreen extends StatelessWidget {
                       accentColor: Color(0xFF26C6DA),
                     ),
                     SecurityToolCard(
-                      icon: Icons.android_rounded,
-                      title: "App Scan",
-                      scanType: "apk",
-                      accentColor: Color(0xFF66BB6A),
-                    ),
-                    SecurityToolCard(
                       icon: Icons.sms_rounded,
                       title: "SMS Scan",
                       scanType: "sms",
                       accentColor: Color(0xFFAB47BC),
                     ),
                     SecurityToolCard(
-                      icon: Icons.history_rounded,
-                      title: "History",
-                      scanType: "history",
-                      accentColor: Color(0xFFFFA726),
+                      icon: Icons.android_rounded,
+                      title: "APK Scan",
+                      scanType: "apk",
+                      accentColor: Color(0xFFFFB74D),
                     ),
                   ],
                 ),

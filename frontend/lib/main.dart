@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'services/scan_api_service.dart';
-import 'screens/home_screen.dart';
-import 'screens/scan_screen.dart';
 import 'Screens/sms_result_screen.dart';
+import 'Screens/home_screen.dart';
+import 'Screens/scan_screen.dart';
 import 'models/sms_scan_result.dart';
 
 void main() {
@@ -29,7 +30,9 @@ class _SafeScanAppState extends State<SafeScanApp> {
   @override
   void initState() {
     super.initState();
-    _autoSmsChannel.setMethodCallHandler(_onNativeMethodCall);
+    if (!kIsWeb) {
+      _autoSmsChannel.setMethodCallHandler(_onNativeMethodCall);
+    }
     _initializeAutoSmsMonitoring();
   }
 
@@ -51,8 +54,16 @@ class _SafeScanAppState extends State<SafeScanApp> {
   }
 
   Future<void> _initializeAutoSmsMonitoring() async {
+    if (kIsWeb) {
+      return;
+    }
+
     await _syncNativeBackendCandidates();
-    await _requestAutoSmsPermissions();
+    try {
+      await _requestAutoSmsPermissions();
+    } catch (_) {
+      // Ignore unsupported permission requests on non-Android platforms.
+    }
     await _loadNotificationTapResult();
   }
 
@@ -67,8 +78,10 @@ class _SafeScanAppState extends State<SafeScanApp> {
   }
 
   Future<void> _requestAutoSmsPermissions() async {
-    await Permission.sms.request();
-    await Permission.notification.request();
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      await Permission.sms.request();
+      await Permission.notification.request();
+    }
   }
 
   Future<void> _loadNotificationTapResult() async {
