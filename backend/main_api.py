@@ -6,10 +6,13 @@ import numpy as np
 from scipy.sparse import hstack
 from urllib.parse import urlparse
 import re
-from feature_engineering import extract_features
-from sms_model import predict_sms
+from pathlib import Path
+from .feature_engineering import extract_features
+from .sms_model import predict_sms
 
 app = FastAPI(title="SafeScan AI Backend")
+
+BASE_DIR = Path(__file__).resolve().parent
 
 # ---------- CORS ----------
 app.add_middleware(
@@ -22,10 +25,10 @@ app.add_middleware(
 
 # ---------- LOAD MODELS ----------
 try:
-    url_model = joblib.load("models/xgb_model_v2.pkl")
-    tfidf = joblib.load("models/tfidf_vectorizer.pkl")
-    threshold = joblib.load("models/threshold.pkl")
-    numeric_columns = joblib.load("models/numeric_columns.pkl")
+    url_model = joblib.load(BASE_DIR / "models" / "xgb_model_v2.pkl")
+    tfidf = joblib.load(BASE_DIR / "models" / "tfidf_vectorizer.pkl")
+    threshold = joblib.load(BASE_DIR / "models" / "threshold.pkl")
+    numeric_columns = joblib.load(BASE_DIR / "models" / "numeric_columns.pkl")
 except Exception as e:
     print(f"Error loading models: {e}")
 
@@ -95,6 +98,20 @@ def structural_risk_score(url: str) -> float:
 
 
 # ---------- ENDPOINTS ----------
+
+@app.get("/")
+async def root():
+    return {
+        "service": "SafeScan AI Backend",
+        "status": "ok",
+        "docs": "/docs",
+        "routes": ["/scan/url", "/scan/sms"],
+    }
+
+
+@app.get("/health")
+async def health():
+    return {"status": "ok"}
 
 @app.post("/scan/url")
 async def scan_url(request: URLRequest):
