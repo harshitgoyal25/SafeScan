@@ -38,8 +38,7 @@ class ApkScanner:
     @classmethod
     def load_default(cls) -> "ApkScanner":
         backend_dir = Path(__file__).resolve().parent
-        repo_root = backend_dir.parent
-        artifact_dir = repo_root / "A4star"
+        artifact_dir = backend_dir / "models"
         if not artifact_dir.exists():
             raise ApkScannerError(
                 f"APK artifacts were not found at {artifact_dir}."

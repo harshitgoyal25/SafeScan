@@ -11,11 +11,15 @@ class SmsResultScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     final isSuspicious =
         result.status == 'suspicious' || result.status == 'danger';
+    final hasUrlFindings = result.urlVerdicts.isNotEmpty;
+    final suspiciousUrls = result.urlVerdicts.where((v) => !v.isSafe).length;
     final Color color = isSuspicious ? Colors.orangeAccent : Colors.greenAccent;
     final IconData icon = isSuspicious
         ? Icons.warning_amber_rounded
         : Icons.verified_rounded;
-    final String title = isSuspicious ? 'Suspicious SMS' : 'SMS Looks Safe';
+    final String title = isSuspicious
+        ? 'Suspicious Message'
+        : 'Message Looks Safe';
     final String subtitle = isSuspicious
         ? 'Avoid clicking links or sharing OTPs before verification.'
         : 'No immediate scam indicators were detected in this SMS.';
@@ -79,7 +83,22 @@ class SmsResultScreen extends StatelessWidget {
             const SizedBox(height: 20),
             _detailCard('Sender', result.sender),
             const SizedBox(height: 12),
+            _detailCard('Source App', result.sourceApp),
+            const SizedBox(height: 12),
+            _detailCard('SMS Model Status', result.smsStatus),
+            const SizedBox(height: 12),
             _detailCard('SMS', result.smsBody),
+            if (hasUrlFindings) ...[
+              const SizedBox(height: 12),
+              _detailCard(
+                'URL Model Summary',
+                suspiciousUrls == 0
+                    ? 'All detected URLs look safe'
+                    : '$suspiciousUrls suspicious URL(s) found',
+              ),
+              const SizedBox(height: 12),
+              ...result.urlVerdicts.map(_urlVerdictCard),
+            ],
           ],
         ),
       ),
@@ -109,6 +128,49 @@ class SmsResultScreen extends StatelessWidget {
           Text(
             value.isEmpty ? '-' : value,
             style: const TextStyle(color: Colors.white, fontSize: 14),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _urlVerdictCard(UrlVerdict verdict) {
+    final isSafe = verdict.isSafe;
+    final accent = isSafe ? Colors.greenAccent : Colors.orangeAccent;
+
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 8),
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFF0D1F2D),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: accent.withValues(alpha: 0.5)),
+      ),
+      child: Row(
+        children: [
+          Icon(
+            isSafe ? Icons.verified_rounded : Icons.warning_amber_rounded,
+            color: accent,
+            size: 18,
+          ),
+          const SizedBox(width: 10),
+          Expanded(
+            child: Text(
+              verdict.url,
+              style: const TextStyle(color: Colors.white, fontSize: 13),
+              maxLines: 2,
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+          const SizedBox(width: 8),
+          Text(
+            verdict.status,
+            style: TextStyle(
+              color: accent,
+              fontWeight: FontWeight.w700,
+              fontSize: 12,
+            ),
           ),
         ],
       ),

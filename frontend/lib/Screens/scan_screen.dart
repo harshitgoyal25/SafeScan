@@ -266,7 +266,7 @@ class _ScanScreenState extends State<ScanScreen>
     return Text(
       hint,
       textAlign: TextAlign.center,
-      style: TextStyle(color: Colors.white.withOpacity(0.5), fontSize: 13.5),
+      style: TextStyle(color: Colors.white.withValues(alpha: 0.5), fontSize: 13.5),
     );
   }
 
@@ -279,7 +279,7 @@ class _ScanScreenState extends State<ScanScreen>
           color: const Color(0xFF0D1F2D),
           borderRadius: BorderRadius.circular(18),
           border: Border.all(
-            color: _accentColor().withOpacity(0.3),
+            color: _accentColor().withValues(alpha: 0.3),
             width: 1.2,
           ),
         ),
@@ -289,7 +289,7 @@ class _ScanScreenState extends State<ScanScreen>
             Text(
               'APK file',
               style: TextStyle(
-                color: Colors.white.withOpacity(0.65),
+                color: Colors.white.withValues(alpha: 0.65),
                 fontSize: 12,
                 fontWeight: FontWeight.w700,
                 letterSpacing: 0.4,
@@ -313,7 +313,7 @@ class _ScanScreenState extends State<ScanScreen>
               maxLines: 2,
               overflow: TextOverflow.ellipsis,
               style: TextStyle(
-                color: Colors.white.withOpacity(0.35),
+                color: Colors.white.withValues(alpha: 0.35),
                 fontSize: 12,
               ),
             ),
@@ -324,7 +324,7 @@ class _ScanScreenState extends State<ScanScreen>
                 onPressed: isScanning ? null : _pickApkFile,
                 style: OutlinedButton.styleFrom(
                   foregroundColor: _accentColor(),
-                  side: BorderSide(color: _accentColor().withOpacity(0.5)),
+                  side: BorderSide(color: _accentColor().withValues(alpha: 0.5)),
                   padding: const EdgeInsets.symmetric(vertical: 14),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(14),
@@ -346,7 +346,7 @@ class _ScanScreenState extends State<ScanScreen>
       decoration: BoxDecoration(
         color: const Color(0xFF0D1F2D),
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _accentColor().withOpacity(0.3), width: 1.2),
+        border: Border.all(color: _accentColor().withValues(alpha: 0.3), width: 1.2),
       ),
       child: TextField(
         controller: _textController,
@@ -356,7 +356,7 @@ class _ScanScreenState extends State<ScanScreen>
           hintText: scanType == 'sms'
               ? 'Paste SMS content here...'
               : 'https://example.com',
-          hintStyle: TextStyle(color: Colors.white.withOpacity(0.25)),
+          hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.25)),
           border: InputBorder.none,
           contentPadding: const EdgeInsets.all(16),
           prefixIcon: Padding(
@@ -364,7 +364,7 @@ class _ScanScreenState extends State<ScanScreen>
             child: Icon(
               _scanIcon(),
               size: 18,
-              color: _accentColor().withOpacity(0.7),
+              color: _accentColor().withValues(alpha: 0.7),
             ),
           ),
           prefixIconConstraints: const BoxConstraints(minWidth: 44),
@@ -388,7 +388,7 @@ class _ScanScreenState extends State<ScanScreen>
           borderRadius: BorderRadius.circular(18),
           gradient: enabled
               ? LinearGradient(
-                  colors: [accent, accent.withOpacity(0.7)],
+                  colors: [accent, accent.withValues(alpha: 0.7)],
                   begin: Alignment.centerLeft,
                   end: Alignment.centerRight,
                 )
@@ -397,7 +397,7 @@ class _ScanScreenState extends State<ScanScreen>
           boxShadow: enabled
               ? [
                   BoxShadow(
-                    color: accent.withOpacity(0.35),
+                    color: accent.withValues(alpha: 0.35),
                     blurRadius: 18,
                     offset: const Offset(0, 6),
                   ),
@@ -475,7 +475,7 @@ class _ScanScreenState extends State<ScanScreen>
                 shape: BoxShape.circle,
                 boxShadow: [
                   BoxShadow(
-                    color: accent.withOpacity(0.2),
+                    color: accent.withValues(alpha: 0.2),
                     blurRadius: 40,
                     spreadRadius: 10,
                   ),
@@ -488,7 +488,7 @@ class _ScanScreenState extends State<ScanScreen>
               child: CircularProgressIndicator(
                 value: 1,
                 strokeWidth: 8,
-                color: accent.withOpacity(0.1),
+                color: accent.withValues(alpha: 0.1),
               ),
             ),
             SizedBox(
@@ -569,10 +569,10 @@ class _ScanScreenState extends State<ScanScreen>
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(20),
-          border: Border.all(color: color.withOpacity(0.5), width: 1.5),
+          border: Border.all(color: color.withValues(alpha: 0.5), width: 1.5),
           boxShadow: [
             BoxShadow(
-              color: color.withOpacity(0.15),
+              color: color.withValues(alpha: 0.15),
               blurRadius: 20,
               offset: const Offset(0, 6),
             ),
@@ -583,7 +583,7 @@ class _ScanScreenState extends State<ScanScreen>
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(
-                color: color.withOpacity(0.15),
+                color: color.withValues(alpha: 0.15),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, color: color, size: 26),
@@ -606,7 +606,7 @@ class _ScanScreenState extends State<ScanScreen>
                     subtitle,
                     style: TextStyle(
                       fontSize: 12,
-                      color: color.withOpacity(0.7),
+                      color: color.withValues(alpha: 0.7),
                     ),
                   ),
                 ],

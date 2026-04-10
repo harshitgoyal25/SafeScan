@@ -17,7 +17,7 @@ class ProtectionStatusCard extends StatelessWidget {
         ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF26C6DA).withOpacity(0.25),
+            color: const Color(0xFF26C6DA).withValues(alpha: 0.25),
             blurRadius: 24,
             spreadRadius: 2,
             offset: const Offset(0, 8),
@@ -32,7 +32,7 @@ class ProtectionStatusCard extends StatelessWidget {
               Container(
                 padding: const EdgeInsets.all(10),
                 decoration: BoxDecoration(
-                  color: Colors.white.withOpacity(0.15),
+                  color: Colors.white.withValues(alpha: 0.15),
                   shape: BoxShape.circle,
                 ),
                 child: const Icon(
@@ -70,7 +70,7 @@ class ProtectionStatusCard extends StatelessWidget {
                   vertical: 6,
                 ),
                 decoration: BoxDecoration(
-                  color: Colors.greenAccent.withOpacity(0.2),
+                  color: Colors.greenAccent.withValues(alpha: 0.2),
                   borderRadius: BorderRadius.circular(20),
                   border: Border.all(color: Colors.greenAccent, width: 1),
                 ),
@@ -93,7 +93,7 @@ class ProtectionStatusCard extends StatelessWidget {
               "Last scan: 5 hours ago",
               style: TextStyle(
                 fontSize: 12,
-                color: Colors.white.withOpacity(0.55),
+                color: Colors.white.withValues(alpha: 0.55),
               ),
             ),
           ),

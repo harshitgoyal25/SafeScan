@@ -35,12 +35,12 @@ class SecurityToolCard extends StatelessWidget {
             ],
           ),
           border: Border.all(
-            color: accentColor.withOpacity(0.25),
+            color: accentColor.withValues(alpha: 0.25),
             width: 1.2,
           ),
           boxShadow: [
             BoxShadow(
-              color: accentColor.withOpacity(0.08),
+              color: accentColor.withValues(alpha: 0.08),
               blurRadius: 16,
               offset: const Offset(0, 4),
             ),
@@ -53,7 +53,7 @@ class SecurityToolCard extends StatelessWidget {
             Container(
               padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
-                color: accentColor.withOpacity(0.12),
+                color: accentColor.withValues(alpha: 0.12),
                 shape: BoxShape.circle,
               ),
               child: Icon(icon, size: 28, color: accentColor),
