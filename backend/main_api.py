@@ -11,9 +11,15 @@ from pydantic import BaseModel
 from scipy.sparse import hstack
 from urllib.parse import urlparse
 
-from .apk_scanner import ApkScannerError, get_apk_scanner
-from .feature_engineering import extract_features
-from .sms_model import predict_sms
+try:
+    from .apk_scanner import ApkScannerError, get_apk_scanner
+    from .feature_engineering import extract_features
+    from .sms_model import predict_sms
+except ImportError:
+    # Supports running as a top-level module (e.g., uvicorn main_api:app in Docker).
+    from apk_scanner import ApkScannerError, get_apk_scanner
+    from feature_engineering import extract_features
+    from sms_model import predict_sms
 
 app = FastAPI(title="SafeScan AI Backend")
 
